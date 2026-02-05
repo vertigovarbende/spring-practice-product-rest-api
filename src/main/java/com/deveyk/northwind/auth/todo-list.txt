@@ -1,0 +1,5 @@
+// 'username' field'i için regex içeren custom validation oluşturulabilir?
+// 'password' field'i için belirli karakterlerin zorunlu olmasını gerektiren bir custom validation olabilir
+
+// role'ü değişen bir kullanıcının valid olan eski token'ını, eski role'ü ile kullanmayı nasıl önleyebiliriz?
+// disabled bir kullanıcının valid olan eski token'ını, eski role'ü ile kullanmayı nasıl önleyebiliriz?

@@ -1,0 +1,9 @@
+// orders - orderdetails - product --> total, unit_price, discount değerleri hesaplanarak total değer bulunacak
+
+// Customer'larin sifreleri düzenle
+
+// entity'ler için ayrı cache config'leri?
+
+// paged olanlar için redis düzgün çalışmıyor
+
+// env. variable'ları eklemeyi unutma

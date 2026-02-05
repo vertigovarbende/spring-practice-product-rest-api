@@ -1,0 +1,19 @@
+# Test configuration for context loading
+# Disable cache to avoid Redis startup
+# Disable JPA open-in-view warning
+spring:
+  datasource:
+    url: jbdc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        cache:
+          use_second_level_cache: false
+    open-in-view: false
+  flyway:
+    enabled: false
+  cache:
+    type: none
