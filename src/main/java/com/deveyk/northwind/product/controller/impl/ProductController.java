@@ -100,7 +100,18 @@ public class ProductController implements IProductController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE')")
     public ResponseEntity<EntityModel<ProductResponse>> update(@PathVariable Long id, @Valid @RequestBody ProductRequest productRequest) {
-        Product product = productService.update(productMapper.toEntity(productRequest));
+        ProductRequest updateProductRequest = ProductRequest.builder()
+                .id(id)
+                .name(productRequest.getName())
+                .category(productRequest.getCategory())
+                .supplier(productRequest.getSupplier())
+                .sku(productRequest.getSku())
+                .barcode(productRequest.getBarcode())
+                .price(productRequest.getPrice())
+                .quantityPerUnit(productRequest.getQuantityPerUnit())
+                .unitsInStock(productRequest.getUnitsInStock())
+                .build();
+        Product product = productService.update(productMapper.toEntity(updateProductRequest));
         EntityModel<ProductResponse> entityModelOfProductResponse = this.toModel(productMapper.toResponse(product));
         return ResponseEntity.ok(entityModelOfProductResponse);
     }

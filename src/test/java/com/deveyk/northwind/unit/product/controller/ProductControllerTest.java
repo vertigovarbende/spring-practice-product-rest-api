@@ -1,4 +1,4 @@
-package com.deveyk.northwind.product.controller;
+package com.deveyk.northwind.unit.product.controller;
 
 import com.deveyk.northwind.product.controller.impl.ProductController;
 import com.deveyk.northwind.product.mapper.ProductMapper;
@@ -282,6 +282,41 @@ public class ProductControllerTest {
         verify(productService, times(1)).save(testProduct);
         verify(productMapper, times(1)).toResponse(testProduct);
 
+    }
+
+    // ??????????????????
+    @Test
+    @DisplayName("Update Product - Success")
+    void shouldUpdateProductSuccessfully() {
+        // Given
+        Long productId = 1000L;
+        ProductRequest productRequest = ProductRequest.builder()
+                .name(testProduct.getName())
+                .category(testCategory.getName())
+                .supplier(testSupplier.getCompanyName())
+                .sku(testProduct.getSku())
+                .barcode(testProduct.getBarcode())
+                .price(Double.valueOf(testProduct.getPrice().toString()))
+                .quantityPerUnit(testProduct.getQuantityPerUnit())
+                .unitsInStock(testProduct.getUnitsInStock())
+                .build();
+
+        when(productMapper.toEntity(productRequest)).thenReturn(testProduct);
+        when(productService.update(testProduct)).thenReturn(testProduct);
+        when(productMapper.toResponse(testProduct)).thenReturn(mockProductResponse);
+
+        // When
+        ResponseEntity<EntityModel<ProductResponse>> response = productController.update(productId, productRequest);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getContent()).isEqualTo(mockProductResponse);
+
+        verify(productMapper, times(1)).toEntity(productRequest);
+        verify(productService, times(1)).update(testProduct);
+        verify(productMapper, times(1)).toResponse(testProduct);
     }
 
 

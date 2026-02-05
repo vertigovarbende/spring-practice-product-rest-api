@@ -14,6 +14,8 @@ import lombok.*;
 @SkuAndBarcodeRequired(message = "Sku and barcode are required")
 public class ProductRequest {
 
+    private Long id;
+
     @NotBlank(message = "Name is required")
     @Size(max = 40, message = "Product name is too long")
     private String name;

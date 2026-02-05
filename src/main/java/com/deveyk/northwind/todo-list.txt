@@ -6,4 +6,4 @@
 
 // paged olanlar için redis düzgün çalışmıyor
 
-// env. variable'ları eklemeyi unutma
+// Unit ve Integration Testleri hallet

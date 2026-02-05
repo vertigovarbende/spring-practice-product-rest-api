@@ -70,5 +70,4 @@ public class Product implements Serializable {
     @OneToMany(mappedBy = "product")
     private Set<OrderDetails> orderDetails;
 
-
 }
