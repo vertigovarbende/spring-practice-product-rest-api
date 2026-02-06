@@ -122,7 +122,12 @@ public class CategoryController implements ICategoryController {
     @PreAuthorize("hasRole('ADMIN') or (hasRole('MANAGER') and hasRole('WAREHOUSE'))")
     public ResponseEntity<EntityModel<CategoryResponse>> update(@PathVariable Long id,
                                                                 @Valid @RequestBody CategoryRequest categoryRequest) {
-        Category category = categoryService.update(categoryMapper.toEntity(categoryRequest));
+        CategoryRequest updateCategoryRequest = CategoryRequest.builder()
+                .id(id)
+                .name(categoryRequest.getName())
+                .description(categoryRequest.getDescription())
+                .build();
+        Category category = categoryService.update(categoryMapper.toEntity(updateCategoryRequest));
         EntityModel<CategoryResponse> categoryResponseEntityModel = this.toModel(categoryMapper.toResponse(category));
         return ResponseEntity.ok(categoryResponseEntityModel);
     }

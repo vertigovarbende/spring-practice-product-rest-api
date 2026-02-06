@@ -12,6 +12,8 @@ import lombok.*;
 @Builder
 public class CategoryRequest {
 
+    private Long id;
+
     @NotBlank(message = "Name is required")
     @Max(value = 15, message = "Name is too long")
     private String name;
