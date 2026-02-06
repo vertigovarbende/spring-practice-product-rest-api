@@ -127,7 +127,17 @@ public class SupplierController implements ISupplierController {
     @PreAuthorize("hasRole('ADMIN') or (hasRole('MANAGER') and hasRole('WAREHOUSE'))")
     public ResponseEntity<EntityModel<SupplierResponse>> update(@PathVariable Long id,
                                                                 @Valid @RequestBody SupplierRequest supplierRequest) {
-        Supplier supplier = supplierService.update(supplierMapper.toEntity(supplierRequest));
+        SupplierRequest updateSupplierRequest = SupplierRequest.builder()
+                .id(id)
+                .companyName(supplierRequest.getCompanyName())
+                .contactName(supplierRequest.getContactName())
+                .contactTitle(supplierRequest.getContactTitle())
+                .address(supplierRequest.getAddress())
+                .city(supplierRequest.getCity())
+                .country(supplierRequest.getCountry())
+                .phone(supplierRequest.getPhone())
+                .build();
+        Supplier supplier = supplierService.update(supplierMapper.toEntity(updateSupplierRequest));
         EntityModel<SupplierResponse> entityModelOfSupplierResponse = this.toModel(supplierMapper.toResponse(supplier));
         return ResponseEntity.ok(entityModelOfSupplierResponse);
     }

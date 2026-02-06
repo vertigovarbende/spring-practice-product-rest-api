@@ -13,6 +13,8 @@ import lombok.*;
 @Builder
 public class SupplierRequest {
 
+    private Long id;
+
     @NotBlank(message = "Company name is required")
     @Max(value = 40, message = "Company name is too long")
     private String companyName;

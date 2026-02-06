@@ -6,4 +6,4 @@
 
 // paged olanlar için redis düzgün çalışmıyor
 
-// Unit ve Integration Testleri hallet
+// Unit ve Integration Testleri hallet!

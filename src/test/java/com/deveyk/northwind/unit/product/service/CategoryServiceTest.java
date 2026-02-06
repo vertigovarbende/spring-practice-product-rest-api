@@ -84,6 +84,7 @@ public class CategoryServiceTest {
                 .discontinued(false)
                 .build();
 
+        categoryService = new CategoryService(categoryRepository, productRepository);
 
     }
 
@@ -318,6 +319,5 @@ public class CategoryServiceTest {
 
         verify(categoryRepository, times(1)).findPopularCategories(pageable);
     }
-
 
 }
