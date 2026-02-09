@@ -1,12 +1,14 @@
 spring:
   application:
     name: "northwind"
+  config:
+    activate:
+      on-profile: dev
   datasource:
     url: "jdbc:postgresql://${DB_IP:localhost}:${DB_PORT:5432}/northwind"
     username: "${DB_USERNAME}"
     password: "${DB_PASSWORD}"
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -59,3 +61,4 @@ jwt:
   expiration: ${JWT_EXP}
   refresh-expiration: ${REF_EXP}
 
+---

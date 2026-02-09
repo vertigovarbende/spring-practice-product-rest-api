@@ -1,5 +1,6 @@
 package com.deveyk.northwind.product.model.entity;
 
+import com.deveyk.northwind.common.entity.BaseEntity;
 import com.deveyk.northwind.order.model.entity.OrderDetails;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +18,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @Cacheable
-public class Product implements Serializable {
+public class Product extends BaseEntity implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
