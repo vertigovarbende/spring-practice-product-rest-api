@@ -1,159 +1,107 @@
 package com.deveyk.northwind.contract;
 
-import com.deveyk.northwind.common.exception.handler.GlobalExceptionHandler;
-import com.deveyk.northwind.product.controller.IProductController;
-import com.deveyk.northwind.product.controller.impl.ProductController;
-import com.deveyk.northwind.product.mapper.ProductMapper;
-import com.deveyk.northwind.product.model.entity.Category;
-import com.deveyk.northwind.product.model.entity.Product;
-import com.deveyk.northwind.product.model.entity.Supplier;
-import com.deveyk.northwind.product.model.request.ProductRequest;
-import com.deveyk.northwind.product.model.response.CategoryResponse;
-import com.deveyk.northwind.product.model.response.ProductResponse;
-import com.deveyk.northwind.product.model.response.SupplierResponse;
-import com.deveyk.northwind.product.service.IProductService;
-import com.deveyk.northwind.product.service.impl.ProductService;
-import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import jakarta.persistence.EntityNotFoundException;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.http.HttpMethod;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.math.BigDecimal;
-import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Map;
 
 public abstract class BaseContractTest {
 
-    @Mock
-    IProductService productService;
+    protected static WireMockServer wireMockServer;
+    protected static HttpClient httpClient;
+    protected ObjectMapper objectMapper;
 
-    @Mock
-    ProductMapper productMapper;
+    @BeforeAll
+    public static void setUpClass() {
+        wireMockServer = new WireMockServer(WireMockConfiguration
+                .options()
+                .port(8089)
+                .notifier(new ConsoleNotifier(true)));
+        wireMockServer.start();
+        WireMock.configureFor("localhost", 8089);
+
+
+      //   httpClient = HttpClient.newHttpClient();
+
+        httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+    }
+
+    @AfterAll
+    public static void tearDownClass() {
+        if (wireMockServer != null && wireMockServer.isRunning())
+            wireMockServer.stop();
+    }
 
     @BeforeEach
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
-
-        // Create controller with mocked dependencies
-        IProductController productController = new ProductController(productService, productMapper);
-
-        // Setup standalone MockMvc with exception handler and custom argument resolvers
-        MockMvc mvcMock = MockMvcBuilders
-                .standaloneSetup(productController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
-                .build();
-
-        RestAssuredMockMvc.mockMvc(mvcMock);
-        mockDataSetupAndServiceBehavior();
+        wireMockServer.resetAll();
+        objectMapper = new ObjectMapper();
     }
 
-    private void mockDataSetupAndServiceBehavior() {
-        // TEST DATA
+    // utility methods
 
-        // Create Category
-        Category category = Category.builder()
-                .id(1L)
-                .name("Beverages")
-                .description("Soft drinks, coffees, teas, beers, and ales")
+    /*
+    protected void stubForRequest(String path, HttpMethod method, HttpStatus responseStatus, Object responseBody) {
+        wireMockServer.stubFor(WireMock
+                .request(method.name(), WireMock.urlEqualTo(path))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(responseStatus.value())
+                        .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                        .withBody(toJson(responseBody))));
+    }
+     */
+
+    protected String toJson(Object object) {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("JsonProcessingException", e);
+        }
+    }
+
+    protected Map<String, Object> toMap(HttpResponse<String> object) {
+        try {
+            return objectMapper.readValue(object.body(), Map.class);
+        } catch (Exception ex) {
+            throw new RuntimeException("JsonProcessingException", ex);
+        }
+    }
+
+    protected HttpResponse<String> sendRequest(String path, HttpMethod method) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI("http://localhost:" + wireMockServer.port() + path))
+                .header("Content-Type", "application/hal+json")
+                .header("Accept", "application/hal+json")
+                .method(method.name(), HttpRequest.BodyPublishers.noBody())
                 .build();
 
-        // Create CategoryResponse
-        CategoryResponse categoryResponse = CategoryResponse.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .description(category.getDescription())
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    protected HttpResponse<String> sendRequest(String path, HttpMethod method, Object body) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI("http://localhost:" + wireMockServer.port() + path))
+                .header("Content-Type", "application/hal+json")
+                .method(method.name(), HttpRequest.BodyPublishers.ofString(toJson(body)))
                 .build();
 
-        // Create Supplier
-        Supplier supplier = Supplier.builder()
-                .id(1L)
-                .companyName("Exotic Liquids")
-                .contactName("Charlotte Cooper")
-                .contactTitle("Purchasing Manager")
-                .address("49 Gilbert St.")
-                .city("London")
-                .region(null)
-                .postalCode("EC1 4SD")
-                .country("UK")
-                .phone("(171) 555-2222")
-                .fax(null)
-                .homepage(null)
-                .build();
-
-        // Create SupplierResponse
-        SupplierResponse supplierResponse = SupplierResponse.builder()
-                .id(supplier.getId())
-                .companyName(supplier.getCompanyName())
-                .contactName(supplier.getContactName())
-                .contactTitle(supplier.getContactTitle())
-                .address(supplier.getAddress())
-                .country(supplier.getCountry())
-                .phone(supplier.getPhone())
-                .homepage(supplier.getHomepage())
-                .build();
-
-        // Create Product
-        Product product = Product.builder()
-                .id(1000L)
-                .name("Chai")
-                .category(category)
-                .supplier(supplier)
-                .sku("SP75017")
-                .barcode("BAR1000000001")
-                .quantityPerUnit("10 boxes x 20 bags")
-                .price(BigDecimal.valueOf(18.00))
-                .unitsInStock(39L)
-                .unitsOnOrder(0L)
-                .reorderLevel(10L)
-                .discontinued(false)
-                .build();
-
-        // Create ProductResponse with correct structure
-        ProductResponse productResponse = ProductResponse.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .category(categoryResponse)
-                .supplier(supplierResponse)
-                .sku(product.getSku())
-                .barcode(product.getBarcode())
-                .quantityPerUnit(product.getQuantityPerUnit())
-                .price(product.getPrice())
-                .unitsInStock(product.getUnitsInStock())
-                .unitsOnOrder(product.getUnitsOnOrder())
-                .build();
-
-        // MOCK SERVICE BEHAVIORS
-
-        // Mock for find product GET /api/products/1
-        given(productService.findById(1000L)).willReturn(product);
-        given(productMapper.toResponse(product)).willReturn(productResponse);
-
-        // Mock for GET /api/products/9999 (it will throw EntityNotFoundException for proper 404 handling)
-        given(productService.findById(9999L)).willThrow(new EntityNotFoundException("Product not found"));
-
-        // Mock for GET /api/products ????
-        given(productService.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(product)));
-
-        // Mock for create product POST /api/products
-        given(productMapper.toEntity(any(ProductRequest.class))).willReturn(product);
-        given(productService.save(any(Product.class))).willReturn(product);
-        given(productMapper.toResponse(any(Product.class))).willReturn(productResponse);
-
-        // Mock for update product PUT /api/products/1
-        given(productService.update(any(Product.class))).willReturn(product);
-
-        // Mock for delete product DELETE /api/products/1 - no return value needed
-
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
 
