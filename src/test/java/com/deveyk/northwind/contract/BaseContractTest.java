@@ -98,6 +98,7 @@ public abstract class BaseContractTest {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:" + wireMockServer.port() + path))
                 .header("Content-Type", "application/hal+json")
+                .header("Accept", "application/hal+json")
                 .method(method.name(), HttpRequest.BodyPublishers.ofString(toJson(body)))
                 .build();
 

@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Map;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.runners.model.MultipleFailureException.assertEmpty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -244,7 +246,7 @@ public class ProductContractTest extends ProductBaseContractTest {
                         .withBody(toJson(expectedResponse))));
 
 
-        // When - Consumer makes create request
+        // When - Consumer makes get request
         HttpResponse<String> response = sendRequest(PRODUCT_ENDPOINT + "/1000", HttpMethod.GET);
 
         // Then - Verify contract
@@ -262,6 +264,151 @@ public class ProductContractTest extends ProductBaseContractTest {
 
         verify(getRequestedFor(urlEqualTo(PRODUCT_ENDPOINT + "/1000"))
                 .withHeader("Accept", equalTo("application/hal+json")));
+
+    }
+
+    @Test
+    @DisplayName("Contract: GET /api/products/{id} should return 404 for non-existent resource")
+    void contractGetProductByIdShouldReturn404ForNonExistentResource() throws Exception {
+        // Given
+        // - Contract specifies 404 for non-existing resources
+        stubFor(get(urlEqualTo(PRODUCT_ENDPOINT + "/9999"))
+                .willReturn(aResponse()
+                        .withStatus(HttpStatus.NOT_FOUND.value())));
+
+        // When
+        // - Consumer request non-existing resource
+        HttpResponse<String> response = sendRequest(PRODUCT_ENDPOINT + "/9999", HttpMethod.GET);
+
+        // Then
+        // - Contract should get 404 status code
+        assertEquals(404, response.statusCode());
+
+        verify(getRequestedFor(urlEqualTo(PRODUCT_ENDPOINT + "/9999")));
+    }
+
+    @Test
+    @DisplayName("Contract: POST /api/products should accept correct payload and return created resource")
+    void contractPostProductShouldAcceptCorrectPayloadAndReturnCreatedResource() throws Exception {
+
+        // Given - Consumer's contract expectations
+        Map<String, Object> payloadOfRequest = Map.of(
+                "name",  "New Product",
+                "category", "Beverages",
+                "supplier", "Exotic Liquids",
+                "sku", "SP00001",
+                "barcode", "BAR1000000001",
+                "price", 149.99,
+                "quantityPerUnit", "quantity-per-unit",
+                "unitInStock", 15
+        );
+
+        Map<String, Object> expectedResponse = Map.ofEntries(
+                Map.entry("id", 1000L),
+                Map.entry("name", "Chai"),
+                Map.entry("category", Map.of(
+                        "id", 1L,
+                        "name", "Beverages",
+                        "description", "Soft drinks, coffees, teas, beers, and ales"
+                )),
+                Map.entry("supplier", Map.of(
+                        "id", 1L,
+                        "companyName", "Exotic Liquids",
+                        "contactName", "Charlotte Cooper",
+                        "contactTitle", "Purchasing Manager",
+                        "address", "49 Gilbert St.",
+                        "country", "UK",
+                        "phone", "(171) 555-2222",
+                        "homepage", "blablahblah"
+                )),
+                Map.entry("sku", "SP75017"),
+                Map.entry("barcode", "BAR1000000001"),
+                Map.entry("quantityPerUnit", "10 boxes x 20 bags"),
+                Map.entry("price", BigDecimal.valueOf(18.00)),
+                Map.entry("unitInStock", 39L),
+                Map.entry("unitOnOrder", 0L),
+                Map.entry("_links", Map.of(
+                        "self", Map.of(
+                                "href", "http://localhost/api/products/1000",
+                                "type", "GET"
+                        ),
+                        "products", Map.of(
+                                "href", "http://localhost/api/products",
+                                "type", "GET"
+                        ),
+                        "category", Map.of(
+                                "href", "http://localhost/api/categories/1",
+                                "type", "GET"
+                        ),
+                        "supplier", Map.of(
+                                "href", "http://localhost/api/supplier/1",
+                                "type", "GET"
+                        )
+                ))
+        );
+
+        // refactor stubForRequest method in BaseContractTest
+        stubFor(post(urlEqualTo(PRODUCT_ENDPOINT))
+                .withHeader("Content-Type", equalTo("application/hal+json"))
+                .withHeader("Accept", equalTo("application/hal+json"))
+                .withRequestBody(equalToJson(toJson(payloadOfRequest)))
+                .willReturn(aResponse()
+                        .withStatus(HttpStatus.CREATED.value())
+                        .withHeader("Content-Type", "application/hal+json")
+                        .withHeader("Location", "http://localhost" + PRODUCT_ENDPOINT + "/1000")
+                        .withBody(toJson(expectedResponse))));
+
+        // When
+        // - Consumer makes create request
+        HttpResponse<String> response = sendRequest(PRODUCT_ENDPOINT, HttpMethod.POST, payloadOfRequest);
+
+        // Then
+        // - Verify contract compliance
+        assertEquals(201, response.statusCode()); // CREATED
+        assertThat(response.headers().firstValue("Location").orElse(""))
+                .contains("http://localhost" + PRODUCT_ENDPOINT + "/1000");
+        assertThat(response.headers().firstValue("Content-Type").orElse(""))
+                .contains("application/hal+json");
+
+        Map<String, Object> responseBody = toMap(response);
+        assertEquals(1000, responseBody.get("id"));
+        assertEquals("Chai", responseBody.get("name"));
+        assertEquals(18.00, responseBody.get("price"));
+        assertTrue(responseBody.containsKey("_links"));
+
+        // - Verify contract interaction
+        verify(postRequestedFor(urlEqualTo(PRODUCT_ENDPOINT))
+                .withHeader("Content-Type", equalTo("application/hal+json"))
+                .withHeader("Accept", equalTo("application/hal+json")));
+
+    }
+
+    @Test
+    @DisplayName("Contract: DELETE /api/products/{id} should delete product and return 204 No Content")
+    void contractDeleteProductShouldDeleteProductAndReturn204NoContent() throws Exception {
+
+        // Given
+        // - Contract for delete operation
+        stubFor(delete(urlEqualTo(PRODUCT_ENDPOINT + "/1000"))
+                .willReturn(aResponse()
+                        .withStatus(HttpStatus.NO_CONTENT.value())));
+
+        // When
+        // - Consumer makes delete request
+
+        // refactor sendRequest methods in BaseContractTest!
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + wireMockServer.port() + PRODUCT_ENDPOINT + "/1000"))
+                .DELETE()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Then
+        assertEquals(204, response.statusCode());
+        assertEquals("", response.body());
+
+        verify(deleteRequestedFor(urlEqualTo(PRODUCT_ENDPOINT + "/1000")));
 
     }
 
