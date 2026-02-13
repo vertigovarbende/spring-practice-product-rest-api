@@ -17,7 +17,7 @@ Contract.make {
         // Beverages - category
         // Exotic Liquids --> supplier
         body([
-                name: "New Product",
+                name: "Test Product",
                 category: "Beverages",
                 supplier: "Exotic Liquids",
                 sku: "SP00001",

@@ -1,4 +1,5 @@
 // orders - orderdetails - product --> total, unit_price, discount değerleri hesaplanarak total değer bulunacak
+    // @Formula Annotation?
 
 // Customer'larin sifreleri düzenle
 
@@ -7,3 +8,5 @@
 // paged olanlar için redis düzgün çalışmıyor
 
 // Unit ve Integration Testleri hallet!
+
+// contract testleri hallet

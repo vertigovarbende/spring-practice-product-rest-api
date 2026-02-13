@@ -287,13 +287,15 @@ public class ProductContractTest extends ProductBaseContractTest {
         verify(getRequestedFor(urlEqualTo(PRODUCT_ENDPOINT + "/9999")));
     }
 
+    // GET - /api/products
+
     @Test
     @DisplayName("Contract: POST /api/products should accept correct payload and return created resource")
     void contractPostProductShouldAcceptCorrectPayloadAndReturnCreatedResource() throws Exception {
 
         // Given - Consumer's contract expectations
         Map<String, Object> payloadOfRequest = Map.of(
-                "name",  "New Product",
+                "name",  "Test product",
                 "category", "Beverages",
                 "supplier", "Exotic Liquids",
                 "sku", "SP00001",
@@ -305,7 +307,7 @@ public class ProductContractTest extends ProductBaseContractTest {
 
         Map<String, Object> expectedResponse = Map.ofEntries(
                 Map.entry("id", 1000L),
-                Map.entry("name", "Chai"),
+                Map.entry("name", "Test Product"),
                 Map.entry("category", Map.of(
                         "id", 1L,
                         "name", "Beverages",
@@ -324,8 +326,8 @@ public class ProductContractTest extends ProductBaseContractTest {
                 Map.entry("sku", "SP75017"),
                 Map.entry("barcode", "BAR1000000001"),
                 Map.entry("quantityPerUnit", "10 boxes x 20 bags"),
-                Map.entry("price", BigDecimal.valueOf(18.00)),
-                Map.entry("unitInStock", 39L),
+                Map.entry("price", BigDecimal.valueOf(149.99)),
+                Map.entry("unitInStock", 15L),
                 Map.entry("unitOnOrder", 0L),
                 Map.entry("_links", Map.of(
                         "self", Map.of(
@@ -372,14 +374,62 @@ public class ProductContractTest extends ProductBaseContractTest {
 
         Map<String, Object> responseBody = toMap(response);
         assertEquals(1000, responseBody.get("id"));
-        assertEquals("Chai", responseBody.get("name"));
-        assertEquals(18.00, responseBody.get("price"));
+        assertEquals("Test Product", responseBody.get("name"));
+        assertEquals(149.99, responseBody.get("price"));
         assertTrue(responseBody.containsKey("_links"));
 
         // - Verify contract interaction
         verify(postRequestedFor(urlEqualTo(PRODUCT_ENDPOINT))
                 .withHeader("Content-Type", equalTo("application/hal+json"))
                 .withHeader("Accept", equalTo("application/hal+json")));
+
+    }
+
+    @Test
+    @DisplayName("Contract: POST /api/products should return 404 for non-existent category resource")
+    void contractPostProductShouldReturn404ForNonExistentCategoryResource() throws Exception {
+
+        // Given
+        // - Consumer's contract expectations
+        //      - category has been changed
+        Map<String, Object> payloadOfRequest = Map.of(
+                "name", "Test product",
+                "category", "NonExistentCategoryResource",
+                "supplier", "Exotic Liquids",
+                "sku", "SP00001",
+                "barcode", "BAR1000000001",
+                "price", 149.99,
+                "quantityPerUnit", "quantity-per-unit",
+                "unitInStock", 15
+        );
+
+        // Given
+        // - Contract specifies 404 for non-existing resources
+        stubFor(post(urlEqualTo(PRODUCT_ENDPOINT))
+                .withHeader("Content-Type", equalTo("application/hal+json"))
+                .withHeader("Accept", equalTo("application/hal+json"))
+                .withRequestBody(equalToJson(toJson(payloadOfRequest)))
+                .willReturn(aResponse()
+                        .withStatus(HttpStatus.NOT_FOUND.value())));
+
+        // When
+        // - Consumer requests non-existing category resource
+        HttpResponse<String> response = sendRequest(PRODUCT_ENDPOINT, HttpMethod.POST, payloadOfRequest);
+
+        // Then
+        // - Contract should get 404 status codes
+        assertEquals(404, response.statusCode());
+        assertEquals("", response.body());
+
+        verify(postRequestedFor(urlEqualTo(PRODUCT_ENDPOINT))
+                .withHeader("Content-Type", equalTo("application/hal+json"))
+                .withHeader("Accept", equalTo("application/hal+json")));
+    }
+
+    @Test
+    @DisplayName("Contract: POST /api/products should return 404 for non-existent supplier resource")
+    void contractPostProductShouldReturn404ForNonExistentSupplierResource() throws Exception {
+
 
     }
 
@@ -410,6 +460,95 @@ public class ProductContractTest extends ProductBaseContractTest {
 
         verify(deleteRequestedFor(urlEqualTo(PRODUCT_ENDPOINT + "/1000")));
 
+    }
+
+    @Test
+    @DisplayName("Contract: PUT /api/products/{id} should accept correct payload and return updated resource")
+    void contractPutProductShouldAcceptCorrectPayloadAndReturnUpdatedResource() throws Exception {
+
+        // Given
+        Map<String, Object> payloadOfRequest = Map.of(
+                "name", "New Updated Product",
+                "category", "Beverages",
+                "supplier", "Exotic Liquids",
+                "sku", "SP00001",
+                "barcode", "BAR1000000001",
+                "price", 189.99,
+                "quantityPerUnit", "quantity-per-unit",
+                "unitInStock", 10
+        );
+
+        Map<String, Object> expectedResponse = Map.ofEntries(
+                Map.entry("id", 1000L),
+                Map.entry("name", "New Updated Product"),
+                Map.entry("category", Map.of(
+                        "id", 1L,
+                        "name", "Beverages",
+                        "description", "Soft drinks, coffees, teas, beers, and ales"
+                )),
+                Map.entry("supplier", Map.of(
+                        "id", 1L,
+                        "companyName", "Exotic Liquids",
+                        "contactName", "Charlotte Cooper",
+                        "contactTitle", "Purchasing Manager",
+                        "address", "49 Gilbert St.",
+                        "country", "UK",
+                        "phone", "(171) 555-2222",
+                        "homepage", "blablahblah"
+                )),
+                Map.entry("sku", "SP75017"),
+                Map.entry("barcode", "BAR1000000001"),
+                Map.entry("quantityPerUnit", "10 boxes x 20 bags"),
+                Map.entry("price", BigDecimal.valueOf(189.99)),
+                Map.entry("unitInStock", 10L),
+                Map.entry("unitOnOrder", 0L),
+                Map.entry("_links", Map.of(
+                        "self", Map.of(
+                                "href", "http://localhost/api/products/1000",
+                                "type", "GET"
+                        ),
+                        "products", Map.of(
+                                "href", "http://localhost/api/products",
+                                "type", "GET"
+                        ),
+                        "category", Map.of(
+                                "href", "http://localhost/api/categories/1",
+                                "type", "GET"
+                        ),
+                        "supplier", Map.of(
+                                "href", "http://localhost/api/supplier/1",
+                                "type", "GET"
+                        )
+                ))
+        );
+
+        stubFor(put(urlEqualTo(PRODUCT_ENDPOINT + "/1000"))
+                .withHeader("Content-Type", equalTo("application/hal+json"))
+                .withHeader("Accept", equalTo("application/hal+json"))
+                .withRequestBody(equalToJson(toJson(payloadOfRequest)))
+                .willReturn(aResponse()
+                        .withStatus(HttpStatus.OK.value())
+                        .withHeader("Content-Type", "application/hal+json")
+                        .withBody(toJson(expectedResponse))));
+
+        // When
+        HttpResponse<String> response = sendRequest(PRODUCT_ENDPOINT + "/1000", HttpMethod.PUT, payloadOfRequest);
+
+        // Then
+        assertEquals(200, response.statusCode());
+        assertThat(response.headers().firstValue("Content-Type").orElse(""))
+                .contains("application/hal+json");
+
+        Map<String, Object> responseBody = toMap(response);
+        assertEquals(1000, responseBody.get("id"));
+        assertEquals("New Updated Product", responseBody.get("name"));
+        assertEquals(189.99, responseBody.get("price"));
+        assertEquals(10, responseBody.get("unitInStock"));
+        assertTrue(responseBody.containsKey("_links"));
+
+        verify(putRequestedFor(urlEqualTo(PRODUCT_ENDPOINT + "/1000"))
+                .withHeader("Content-Type", equalTo("application/hal+json"))
+                .withHeader("Accept", equalTo("application/hal+json")));
     }
 
 }
