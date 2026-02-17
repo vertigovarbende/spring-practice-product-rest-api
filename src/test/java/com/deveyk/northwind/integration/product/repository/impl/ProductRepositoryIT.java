@@ -1,5 +1,7 @@
-package com.deveyk.northwind.integration.product.repository;
+package com.deveyk.northwind.integration.product.repository.impl;
 
+import com.deveyk.northwind.integration.product.TestDataBuilder;
+import com.deveyk.northwind.integration.product.repository.BaseRepositoryIT;
 import com.deveyk.northwind.product.model.entity.Category;
 import com.deveyk.northwind.product.model.entity.Product;
 import com.deveyk.northwind.product.model.entity.Supplier;
@@ -10,22 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -35,29 +25,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@DataJpaTest
-@Testcontainers
-@ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("ProductRepository Integration Tests")
-public class ProductRepositoryIT {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test")
-            .withReuse(true);
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.flyway.enabled", () -> "false");
-    }
+public class ProductRepositoryIT extends BaseRepositoryIT {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -77,47 +46,11 @@ public class ProductRepositoryIT {
 
     @BeforeEach
     void setUp() {
-        testCategory = Category.builder()
-                .name("Beverages")
-                .description("Soft drinks, coffees, teas, beers, and ales")
-                .build();
-        testCategory.setCreatedAt(java.time.LocalDateTime.now());
-        testCategory.setUpdatedAt(java.time.LocalDateTime.now());
-
-        testSupplier = Supplier.builder()
-                .companyName("Exotic Liquids")
-                .contactName("Charlotte Cooper")
-                .contactTitle("Purchasing Manager")
-                .address("49 Gilbert St.")
-                .city("London")
-                .region(null)
-                .postalCode("EC1 4SD")
-                .country("UK")
-                .phone("(171) 555-2222")
-                .fax(null)
-                .homepage(null)
-                .build();
-        testSupplier.setCreatedAt(java.time.LocalDateTime.now());
-        testSupplier.setUpdatedAt(java.time.LocalDateTime.now());
+        testCategory = TestDataBuilder.createTestCategory();
+        testSupplier = TestDataBuilder.createTestSupplier();
 
         testCategory = entityManager.persistAndFlush(testCategory);
         testSupplier = entityManager.persistAndFlush(testSupplier);
-    }
-
-    private Product createTestProduct(String name, String sku, String barcode) {
-        return Product.builder()
-                .name(name)
-                .supplier(testSupplier)
-                .category(testCategory)
-                .sku(sku)
-                .barcode(barcode)
-                .quantityPerUnit("10 boxes x 20 bags")
-                .price(BigDecimal.valueOf(18.00))
-                .unitsInStock(39L)
-                .unitsOnOrder(0L)
-                .reorderLevel(10L)
-                .discontinued(false)
-                .build();
     }
 
     @Test
@@ -125,7 +58,7 @@ public class ProductRepositoryIT {
     void shouldSaveAndFindProductById() {
 
         // Given
-        Product product = createTestProduct("Test Product", "SP75017", "BAR1000000001");
+        Product product = TestDataBuilder.createTestProduct("Test Product", "SP75017", "BAR1000000001");
         product.setCreatedAt(java.time.LocalDateTime.now());
         product.setUpdatedAt(java.time.LocalDateTime.now());
 
@@ -148,7 +81,7 @@ public class ProductRepositoryIT {
 
         // Given
         for (int i = 1; i <= 5; ++i) {
-            Product product = createTestProduct("Test Product " + i, "SP75017" + i, "BAR100000000" + i);
+            Product product = TestDataBuilder.createTestProduct("Test Product " + i, "SP75017" + i, "BAR100000000" + i);
             entityManager.persistAndFlush(product);
         }
         PageRequest pageRequest = PageRequest.of(0, 3, Sort.by("name").ascending());
@@ -171,7 +104,7 @@ public class ProductRepositoryIT {
 
         // Given
         for (int i = 1; i <= 5; i++) {
-            Product product = createTestProduct("Category Product " + i, "SP75017" + i, "BAR100000000" + i);
+            Product product = TestDataBuilder.createTestProduct("Category Product " + i, "SP75017" + i, "BAR100000000" + i);
             product.setCategory(testCategory);
             product.setCreatedAt(java.time.LocalDateTime.now());
             product.setUpdatedAt(java.time.LocalDateTime.now());
@@ -197,7 +130,7 @@ public class ProductRepositoryIT {
 
         // Given
         for (int i = 1; i <= 5; i++) {
-            Product product = createTestProduct("Category Product " + i, "SP75017" + i, "BAR100000000" + i);
+            Product product =  TestDataBuilder.createTestProduct("Category Product " + i, "SP75017" + i, "BAR100000000" + i);
             product.setCategory(testCategory);
             product.setCreatedAt(java.time.LocalDateTime.now());
             product.setUpdatedAt(java.time.LocalDateTime.now());
@@ -224,7 +157,7 @@ public class ProductRepositoryIT {
 
         // Given
         for (int i = 1; i <= 5; i++) {
-            Product product = createTestProduct("Supplier Product " + i, "SP75017" + i, "BAR100000000" + i);
+            Product product =  TestDataBuilder.createTestProduct("Supplier Product " + i, "SP75017" + i, "BAR100000000" + i);
             product.setSupplier(testSupplier);
             product.setCreatedAt(java.time.LocalDateTime.now());
             product.setUpdatedAt(java.time.LocalDateTime.now());
@@ -252,7 +185,7 @@ public class ProductRepositoryIT {
 
         // Given
         for (int i = 1; i <= 5; i++) {
-            Product product = createTestProduct("Supplier Product " + i, "SP75017" + i, "BAR100000000" + i);
+            Product product =  TestDataBuilder.createTestProduct("Supplier Product " + i, "SP75017" + i, "BAR100000000" + i);
             product.setSupplier(testSupplier);
             product.setCreatedAt(java.time.LocalDateTime.now());
             product.setUpdatedAt(java.time.LocalDateTime.now());
@@ -277,7 +210,7 @@ public class ProductRepositoryIT {
     @DisplayName("Should delete product by id")
     void shouldDeleteProductById() {
         // Given
-        Product product = createTestProduct("Test Product", "SP75017", "BAR1000000001");
+        Product product =  TestDataBuilder.createTestProduct("Test Product", "SP75017", "BAR1000000001");
         product.setCreatedAt(java.time.LocalDateTime.now());
         product.setUpdatedAt(java.time.LocalDateTime.now());
         Product savedProduct = entityManager.persistAndFlush(product);
@@ -298,7 +231,7 @@ public class ProductRepositoryIT {
 
         // Given
         for (int i = 1; i <= 3; ++i) {
-            Product product = createTestProduct("Test Product " + i, "SP75017" + i, "BAR100000000" + i);
+            Product product =  TestDataBuilder.createTestProduct("Test Product " + i, "SP75017" + i, "BAR100000000" + i);
             entityManager.persistAndFlush(product);
         }
 
@@ -314,7 +247,7 @@ public class ProductRepositoryIT {
     void shouldUpdateProductById() {
 
         // Given
-        Product product = createTestProduct("Test Product", "SP75017", "BAR1000000001");
+        Product product =  TestDataBuilder.createTestProduct("Test Product", "SP75017", "BAR1000000001");
         product.setCreatedAt(java.time.LocalDateTime.now());
         product.setUpdatedAt(java.time.LocalDateTime.now());
         Product savedProduct = entityManager.persistAndFlush(product);
@@ -343,7 +276,7 @@ public class ProductRepositoryIT {
     void shouldCheckIfProductExistsById() {
 
         // Given
-        Product product = createTestProduct("Test Product", "SP75017", "BAR1000000001");
+        Product product =  TestDataBuilder.createTestProduct("Test Product", "SP75017", "BAR1000000001");
         Product savedProduct = entityManager.persistAndFlush(product);
 
         // When/Then
@@ -367,17 +300,17 @@ public class ProductRepositoryIT {
         bookCategory = entityManager.persistAndFlush(bookCategory);
 
         // Create products in different categories
-        Product beveragesProduct1 = createTestProduct("Beverages Product 1", "SP75017", "BAR1000000001");
+        Product beveragesProduct1 =  TestDataBuilder.createTestProduct("Beverages Product 1", "SP75017", "BAR1000000001");
         beveragesProduct1.setCategory(beveragesCategory);
         beveragesProduct1.setCreatedAt(java.time.LocalDateTime.now());
         beveragesProduct1.setUpdatedAt(java.time.LocalDateTime.now());
 
-        Product beveragesProduct2 = createTestProduct("Beverages Product 2", "SP75018", "BAR1000000002");
+        Product beveragesProduct2 =  TestDataBuilder.createTestProduct("Beverages Product 2", "SP75018", "BAR1000000002");
         beveragesProduct2.setCategory(beveragesCategory);
         beveragesProduct2.setCreatedAt(java.time.LocalDateTime.now());
         beveragesProduct2.setUpdatedAt(java.time.LocalDateTime.now());
 
-        Product bookProduct = createTestProduct("Book Product", "SP75019", "BAR1000000003");
+        Product bookProduct =  TestDataBuilder.createTestProduct("Book Product", "SP75019", "BAR1000000003");
         bookProduct.setCategory(bookCategory);
         bookProduct.setCreatedAt(java.time.LocalDateTime.now());
         bookProduct.setUpdatedAt(java.time.LocalDateTime.now());
@@ -442,17 +375,17 @@ public class ProductRepositoryIT {
         anotherSupplier = entityManager.persistAndFlush(anotherSupplier);
 
         // Create products in different suppliers
-        Product exoticLiquidsProduct1 = createTestProduct("Exotic Liquids Product 1", "SP75017", "BAR1000000001");
+        Product exoticLiquidsProduct1 = TestDataBuilder.createTestProduct("Exotic Liquids Product 1", "SP75017", "BAR1000000001");
         exoticLiquidsProduct1.setSupplier(exoticLiquids);
         exoticLiquidsProduct1.setCreatedAt(java.time.LocalDateTime.now());
         exoticLiquidsProduct1.setUpdatedAt(java.time.LocalDateTime.now());
 
-        Product exoticLiquidsProduct2 = createTestProduct("Exotic Liquids Product 2", "SP75018", "BAR1000000002");
+        Product exoticLiquidsProduct2 = TestDataBuilder.createTestProduct("Exotic Liquids Product 2", "SP75018", "BAR1000000002");
         exoticLiquidsProduct2.setSupplier(exoticLiquids);
         exoticLiquidsProduct2.setCreatedAt(java.time.LocalDateTime.now());
         exoticLiquidsProduct2.setUpdatedAt(java.time.LocalDateTime.now());
 
-        Product anotherSupplierProduct = createTestProduct("Another Supplier Product", "SP75019", "BAR1000000003");
+        Product anotherSupplierProduct = TestDataBuilder.createTestProduct("Another Supplier Product", "SP75019", "BAR1000000003");
         anotherSupplierProduct.setSupplier(anotherSupplier);
         anotherSupplierProduct.setCreatedAt(java.time.LocalDateTime.now());
         anotherSupplierProduct.setUpdatedAt(java.time.LocalDateTime.now());
