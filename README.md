@@ -2,6 +2,12 @@
 
 This project is a **Spring Boot REST API** built around the classic Northwind database scenario using modern technologies. The goal is to demonstrate widely used technologies, layered architecture, and best practices in an enterprise-grade Java backend application.
 
+- Designed and implemented RESTful APIs with Spring Web and HATEOAS.
+- Secured endpoints with Spring Security using JWT and role-based access control (RBAC).
+- Reduced response times by introducing Redis-based caching layers.
+- Increased reliability with comprehensive unit and integration test coverage.
+- Automated build and deployment using GitHub Actions CI/CD pipelines.
+
 ### Features
 
 - **Tech stack**
@@ -23,30 +29,16 @@ This project is a **Spring Boot REST API** built around the classic Northwind da
 
 ### Project Structure
 
-High-level project layout:
-
-- **Root**
-    - `pom.xml` – Maven build configuration (dependencies, plugins, Java version).
-    - `README.md` – Project documentation.
-
-- **Application entry**
-    - `src/main/java/com/deveyk/northwind/NorthwindApplication.java` – Spring Boot main class, application bootstrap.
-
-- **Core packages**
-    - `src/main/java/com/deveyk/northwind/common` – Common/shared components (base entities, configs like Redis, utilities).
-    - `src/main/java/com/deveyk/northwind/auth` – Authentication, authorization, security config, JWT filter, auth/admin controllers and services.
-    - `src/main/java/com/deveyk/northwind/product` – Product, category, supplier domain (entities, DTOs, mappers, repositories, services, controllers).
-    - `src/main/java/com/deveyk/northwind/order` – Order and order details (entities, DTOs, repositories, services, controllers).
-    - `src/main/java/com/deveyk/northwind/customer` – Customer-facing APIs (customer entities, DTOs, mappers, services, controllers).
-    - `src/main/java/com/deveyk/northwind/employee` – Employee and HR domain (entities, DTOs, mappers, services, public/HR controllers).
-
-- **Configuration & resources**
-    - `src/main/resources/application-*.yml` / `application-*.properties` – Environment-specific configuration (database, Redis, security, etc.).
-    - `src/main/resources/db/migration` – Flyway migration scripts for PostgreSQL schema and seed data.
-
-- **Tests**
-    - `src/test/java/...` – Unit, integration, Testcontainers-based tests and Spring Cloud Contract tests.
-    - `src/test/resources/...` – Test configuration, stubs, WireMock mappings, and contract definitions.
+```text
+src/main/java/com/deveyk/northwind/
+├── auth/        # Authentication, authorization, security config, JWT, admin/auth APIs
+├── product/     # Products, categories, suppliers, pricing, stock
+├── order/       # Orders and order details, order workflows
+├── customer/    # Customer-facing APIs and views of products/orders
+├── employee/    # Employees and HR operations (public and HR endpoints)
+├── common/      # Shared configuration, base entities, utilities
+└── NorthwindApplication.java  # Spring Boot application entry point
+```
 
 ### API Endpoints
 
@@ -162,7 +154,6 @@ The project integrates the following main testing tools:
 - **H2** in-memory database (for test profile)
 - **Spring Cloud Contract** for contract testing
 
-```
 ### License
 
 This project is intended for educational and example purposes. You are free to use it as a reference or adapt it to your own needs.
